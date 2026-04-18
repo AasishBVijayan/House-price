@@ -2,15 +2,15 @@
   "experimentalServices": {
     "frontend": {
       "framework": "vite",
+      "rootDirectory": "frontend",
       "entrypoint": "package.json",
       "routePrefix": "/"
     },
     "backend": {
       "framework": "fastapi",
+      "rootDirectory": "backend",
       "entrypoint": "app/app.py",
-      "routePrefix": "/api",
-      "maxDuration": 10,
-      "memory": 1024
+      "routePrefix": "/api"
     }
   }
 }
