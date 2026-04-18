@@ -1,6 +1,5 @@
 fastapi
 uvicorn
 scikit-learn==1.6.1
-numpy==2.2.2
-joblib==1.4.2
-xgboost
+xgboost==2.0.3
+joblib
