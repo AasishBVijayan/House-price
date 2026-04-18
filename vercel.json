@@ -1,0 +1,12 @@
+{
+  "experimentalServices": {
+    "frontend": {
+      "rootDirectory": "frontend",
+      "routePrefix": "/"
+    },
+    "backend": {
+      "rootDirectory": "backend",
+      "routePrefix": "/api"
+    }
+  }
+}
