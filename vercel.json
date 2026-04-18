@@ -1,12 +1,16 @@
 {
-  "experimentalServices": {
+  "version": 3,
+  "services": {
     "frontend": {
-      "rootDirectory": "frontend",
-      "routePrefix": "/"
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     },
     "backend": {
-      "rootDirectory": "backend",
-      "routePrefix": "/api"
+      "src": "backend/app/app.py",
+      "use": "@vercel/python"
     }
   }
 }
