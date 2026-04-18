@@ -1,18 +1,21 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
+import os
 import joblib
 import numpy as np
 import pandas as pd
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import HTTPException
 
 app = FastAPI()
 
-pipeline = joblib.load("house_price_pipeline.pkl")
+# 1. FIXED PATHING
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+pipeline = joblib.load(os.path.join(BASE_DIR, "house_price_pipeline.pkl"))
 
+# 2. FIXED CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["*"], # Use "*" temporarily to ensure the connection works
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -33,10 +36,8 @@ def root():
 @app.post("/predict")
 def predict(data: HouseInput):
     try:
-        # Convert request to dataframe using the modern model_dump()
+        # 3. Predict
         df = pd.DataFrame([data.model_dump()])
-
-        # Rename columns to match training data exactly
         df = df.rename(columns={
             "overall_qual": "Overall Qual",
             "gr_liv_area": "Gr Liv Area",
@@ -46,12 +47,10 @@ def predict(data: HouseInput):
             "year_built": "Year Built"
         })
 
-        # Make prediction and reverse the log transformation
         pred_log = pipeline.predict(df)
         price = np.expm1(pred_log)
 
         return {"predicted_price": float(price[0])}
         
     except Exception as e:
-        # Catch any errors and send a 400 Bad Request back to React
-        raise HTTPException(status_code=400, detail=f"Prediction error: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
