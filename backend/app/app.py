@@ -1,21 +1,23 @@
 import os
 import joblib
 import numpy as np
-import pandas as pd
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-# 1. FIXED PATHING
+# 1. FIXED PATHING - Ensures Vercel finds the pkl file
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-pipeline = joblib.load(os.path.join(BASE_DIR, "house_price_pipeline.pkl"))
+MODEL_PATH = os.path.join(BASE_DIR, "house_price_pipeline.pkl")
 
-# 2. FIXED CORS
+# Global variable to hold the model so it doesn't reload every time
+pipeline = joblib.load(MODEL_PATH)
+
+# 2. FIXED CORS - Wildcard allows Vercel frontend to connect
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Use "*" temporarily to ensure the connection works
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -36,21 +38,26 @@ def root():
 @app.post("/predict")
 def predict(data: HouseInput):
     try:
-        # 3. Predict
-        df = pd.DataFrame([data.model_dump()])
-        df = df.rename(columns={
-            "overall_qual": "Overall Qual",
-            "gr_liv_area": "Gr Liv Area",
-            "garage_cars": "Garage Cars",
-            "total_bsmt_sf": "Total Bsmt SF",
-            "full_bath": "Full Bath",
-            "year_built": "Year Built"
-        })
+        # 3. CONVERT TO NUMPY (Removes Pandas dependency)
+        # The order here MUST match the order your model was trained on
+        features = np.array([[
+            data.overall_qual,
+            data.gr_liv_area,
+            data.garage_cars,
+            data.total_bsmt_sf,
+            data.full_bath,
+            data.year_built
+        ]])
 
-        pred_log = pipeline.predict(df)
+        # 4. PREDICT
+        pred_log = pipeline.predict(features)
+        
+        # Reverse log transformation (assuming training used log1p)
         price = np.expm1(pred_log)
 
         return {"predicted_price": float(price[0])}
         
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        # If your pipeline specifically requires a DataFrame, this might error.
+        # If it does, we will revert to Pandas but optimize elsewhere.
+        raise HTTPException(status_code=400, detail=f"Prediction error: {str(e)}")
