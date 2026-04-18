@@ -49,7 +49,7 @@ function App() {
       setRawPrice(null);
       setError(null);
 
-      const response = await axios.post("http://127.0.0.1:8000/predict", {
+      const response = await axios.post("/api/predict", {
         overall_qual: Number(form.overall_qual),
         gr_liv_area: Number(form.gr_liv_area),
         garage_cars: Number(form.garage_cars),
